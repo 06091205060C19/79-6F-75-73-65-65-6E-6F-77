@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>moth.old</title>
+<style>
+:root{--decay:0;--red:#760009;--fg:#8e948c}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#020202;color:var(--fg);font-family:"Courier New",monospace}
+body{overflow:hidden;background:radial-gradient(circle at 50% 30%,#090506,#020202 62%);transition:filter .4s}
+#scan{position:fixed;inset:0;pointer-events:none;z-index:30;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px),linear-gradient(90deg,rgba(100,0,6,.02),transparent 30%,rgba(100,0,6,.025));mix-blend-mode:screen}
+#blood{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:calc(var(--decay)*.07);background:radial-gradient(ellipse at 15% -5%,#670008 0 23%,transparent 25%),radial-gradient(ellipse at 73% 109%,#480005 0 30%,transparent 32%);transition:opacity .5s}
+#term{position:relative;z-index:5;height:100vh;overflow-y:auto;padding:5vw 6vw 12vh;white-space:pre-wrap;line-height:1.52;font-size:clamp(12px,1.35vw,16px);text-shadow:0 0 calc(var(--decay)*2px) rgba(120,0,7,.45)}
+.dim{color:#3d423d}.red{color:#9f151d}.bad{color:#be2430;text-shadow:0 0 8px #5b0005}.link{color:#b6aaa0;text-decoration:underline;cursor:pointer}
+#inputline{display:flex;gap:8px;align-items:center}#cmd{flex:1;background:transparent;border:0;outline:0;color:#a8ada6;font:inherit;caret-color:#a00}
+#angelShock{position:fixed;inset:0;z-index:100;pointer-events:none;opacity:0;background:#000;display:grid;place-items:center}
+#angelShock img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(3.8) brightness(.43);transform:scale(1.3)}
+#angelShock.face img{clip-path:inset(0 24% 27% 17%);transform:scale(1.8) translateY(10%);filter:grayscale(1) contrast(4.5) brightness(.5)}
+#angelShock.show{animation:shock .28s steps(3) both}@keyframes shock{0%{opacity:0}15%{opacity:.98}30%{opacity:.06}46%{opacity:.91}70%{opacity:.12}100%{opacity:0}}
+#tear{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;background:repeating-linear-gradient(92deg,transparent 0 4%,rgba(156,0,9,.09) 4.2% 4.5%,transparent 4.8% 9%);mix-blend-mode:screen}
+body.decay2 #term{transform:skewX(.08deg)}body.decay3 #tear{opacity:.2}body.decay4 #term{filter:contrast(1.1)}body.decay5{animation:bodyJerk 8s infinite}body.decay6 #scan{opacity:.7}
+@keyframes bodyJerk{0%,96%,100%{transform:none}97%{transform:translateX(2px)}98%{transform:translateX(-3px)}99%{transform:translateY(1px)}}
+#nextDoor{display:none;margin-top:18px;color:#bd2028;letter-spacing:.12em}#nextDoor.show{display:block}
+#cornerEye{position:fixed;right:18px;top:18px;width:34px;height:16px;z-index:12;opacity:.18;border:1px solid #6f5552;border-radius:70% 8% 70% 8%;transform:rotate(45deg)}
+#cornerEye:after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:#24100f;left:12px;top:4px;box-shadow:0 0 6px #75000a}
+</style></head>
+<body><div id="scan"></div><div id="blood"></div><div id="tear"></div><div id="cornerEye"></div>
+<div id="angelShock"><img src="angel.png" alt=""></div>
+<div id="term"><span class="dim">archive mount ............. OK
+index reconstruction ...... PARTIAL
+owner ..................... [REDACTED]
+legacy handle .............</span> <span class="red">MOTH</span>
+
+&gt; recovered session: 03:33:33
+
+<span class="dim">[03:31:08]</span> do not use the same node twice
+<span class="dim">[03:31:44]</span> i know
+<span class="dim">[03:32:19]</span> no you don't
+<span class="dim">[03:33:02]</span> who is using stdin
+<span class="dim">[03:33:05]</span> 
+<span class="dim">[03:33:08]</span> stop
+<span class="dim">[03:33:33]</span> <span class="red">████████████████████</span>
+
+&gt; next archive is not indexed
+&gt; file count: 12
+&gt; visible count: 11
+&gt; type <span class="dim">help</span> if you have forgotten how to use a shell.
+
+<div id="output"></div><div id="inputline"><span class="red">moth@dead:~$</span><input id="cmd" autocomplete="off" autofocus spellcheck="false"></div><div id="nextDoor"></div></div>
+<script>
+const FILES={"a7c.log": {"sec": 23, "content": "9wwnzfs88v0qpv9p1fvdqyM-q3o48rcslzegibdri1jvagpyx4x2eyx_8-tekcaj", "mtime": "2026-03-03 03:33:23"}, "k19.bin": {"sec": 3, "content": "xuO9fkb_q7dyfztyrpknm94ts2timufa3l799tcjsx4633ikmxx991uepcumy--m", "mtime": "2026-03-03 03:33:03"}, "r4.tmp": {"sec": 41, "content": "1jlxvi612_5x3ii-htzlj84pur_ufp2oi-y-jo_3T.21_o09oecw-adtiyvs0g8i", "mtime": "2026-03-03 03:33:41"}, "n0de.dat": {"sec": 11, "content": "14cn55a085H4pg4dp63.qg8t63ymk4epf5vae7o_1vjyf_x9ez5-sfbb6mev.8wh", "mtime": "2026-03-03 03:33:11"}, "cache.11": {"sec": 31, "content": "cy_5ixl.5457_5ab0-qlxfs9oxgxky=5gd6r4q9lxj93cgp76mkrnfyf71lafes2", "mtime": "2026-03-03 03:33:31"}, "sig_4f": {"sec": 7, "content": "1ker9zF17m0wbw.c1s6ipq4p_1frkfyehsn7--z4itfx-efjy83am.y64jae3rfz", "mtime": "2026-03-03 03:33:07"}, "trace17": {"sec": 47, "content": "5ratp7rivcrh7uut0h02oxrb0-.5447yuefl-.tag91qynI94j15hwsuos38fzjp", "mtime": "2026-03-03 03:33:47"}, "q31.log": {"sec": 17, "content": "dt1y6yd9.-qjf5mmR8ebgrfn0bvk6nmfaqmdb5yu7qkpd4fplqjekn2c5g-2jrwu", "mtime": "2026-03-03 03:33:17"}, "void.bin": {"sec": 37, "content": "s-tibmibwzol4d18irewk6jtxjlvbfy3690qEwxtfxxjjlywqhc4srr.6zhkr8bm", "mtime": "2026-03-03 03:33:37"}, "e3.tmp": {"sec": 13, "content": "ygp1i86f9f2-Fyzl-vsab-jdvvdgx7cn4v0cf46cfkc8hhrtgwizllc50770f4is", "mtime": "2026-03-03 03:33:13"}, "mem29": {"sec": 29, "content": "2jabqkayy0fybdrj8ok_bt8ib5-1L-w-j46.7fjg1bi4_79s3c1f5kcuirn7vkvc", "mtime": "2026-03-03 03:33:29"}, "f19.dat": {"sec": 19, "content": "3x7v9u6xwdugdhgsi2Ygdax2o27bcvvnlt.7651jzotzdftercspykyn-cfhxcyn", "mtime": "2026-03-03 03:33:19"}};const NAMES=["a7c.log", "k19.bin", "r4.tmp", "n0de.dat", "cache.11", "sig_4f", "trace17", "q31.log", "void.bin", "e3.tmp", "mem29", "f19.dat"];
+const out=document.getElementById('output'),cmd=document.getElementById('cmd'),term=document.getElementById('term'),shock=document.getElementById('angelShock'),nextDoor=document.getElementById('nextDoor');
+let commands=0,decay=0,audio=null,solved=false;
+function ensureAudio(){if(audio)return audio;try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}return audio}
+function noiseHit(strong=false){const a=ensureAudio();if(!a)return;const dur=strong?.30:.13,n=Math.floor(a.sampleRate*dur),buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const src=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();src.buffer=buf;f.type='bandpass';f.frequency.value=strong?1700:720;f.Q.value=.7;g.gain.value=strong?.11:.035;src.connect(f).connect(g).connect(a.destination);src.start();const o=a.createOscillator(),og=a.createGain();o.type='sawtooth';o.frequency.setValueAtTime(strong?380:91,a.currentTime);o.frequency.exponentialRampToValueAtTime(39,a.currentTime+dur);og.gain.setValueAtTime(strong?.035:.012,a.currentTime);og.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur);o.connect(og).connect(a.destination);o.start();o.stop(a.currentTime+dur)}
+function screamer(mode=''){shock.className='';if(mode)shock.classList.add(mode);void shock.offsetWidth;shock.classList.add('show');noiseHit(true);setTimeout(()=>shock.className='',360)}
+function print(s,cls=''){const div=document.createElement('div');if(cls)div.className=cls;div.innerHTML=s;out.appendChild(div);term.scrollTop=term.scrollHeight}
+function worsen(){commands++;decay=Math.min(6,1+Math.floor(commands/3));document.body.className='decay'+decay;document.documentElement.style.setProperty('--decay',decay);if(commands===5)screamer('face');if(commands===10)screamer('');if(commands>12&&Math.random()<.18)screamer(Math.random()<.5?'face':'')}
+function help(){print('commands: ls, ls -la, cat &lt;file&gt;, stat &lt;file&gt;, strings &lt;file&gt;, history, pwd, whoami, clear, solve &lt;answer&gt;','dim')}
+function ls(all){let arr=NAMES.slice(0,11);if(all)arr.push('.333');print(arr.join('   '))}
+function catFile(n){if(n==='.333'){print('NOT TEXT','bad');return};if(!FILES[n]){print('cat: '+n+': No such file','dim');return};print(FILES[n].content)}
+function statFile(n){
+  if(n==='.333'){
+    print(`File: .333
+Size: 33333 bytes
+Modify: 2026-03-03 03:33:33
+Birth: -
+Entries expected: 12
+Index source: EXTERNAL`,'dim');
+    return;
+  }
+  if(!FILES[n]){
+    print('stat: cannot stat '+n,'dim');
+    return;
+  }
+  let f=FILES[n];
+  print(`File: ${n}
+Size: 64 bytes
+Modify: ${f.mtime}
+Access: [UNKNOWN]`,'dim');
+}
+function stringsFile(n){
+  if(n==='.333'){
+    print(`TWELVE FILES
+TWELVE WATCHERS
+
+THE WATCHERS BLINK IN ORDER
+COUNT THEM FROM THE LEFT
+
+RETURN TO WHERE THEY FIRST WATCHED YOU
+
+33`,'red');
+    screamer('face');
+    return;
+  }
+  if(!FILES[n]){
+    print('strings: '+n+': No such file','dim');
+    return;
+  }
+  print(FILES[n].content);
+}
+function history(){
+  print(`  1  mount archive_333
+  2  ls
+  3  cat index
+  4  who is using stdin
+  5  stop
+  6  █████████████
+  7  history`,'dim');
+  if(commands>6){
+    setTimeout(()=>print('  8  <span class="red">look behind the terminal</span>'),900);
+  }
+}
+function solveAnswer(ans){
+  let a=ans.toUpperCase().replace(/\s+/g,'');
+  if(a==='MOTH=FIREFLY'||a==='MOTHISFIREFLY'){
+    solved=true;
+    print('IDENTITY MATCH ............ ACCEPTED','red');
+    print(`legacy handle: MOTH
+current handle: FIREFLY
+archive branch: FOURTH`,'dim');
+    screamer('face');
+    setTimeout(()=>{
+      nextDoor.innerHTML='NEXT: <a class="link" href="fourth.html">/fourth.html</a>';
+      nextDoor.classList.add('show');
+    },1600);
+  } else {
+    print('IDENTITY MATCH ............ REJECTED','bad');
+    if(Math.random()<.5)screamer('');
+  }
+}
+function run(raw){worsen();let t=raw.trim(),parts=t.split(/\s+/),c=parts[0]?.toLowerCase();print('<span class="red">moth@dead:~$</span> '+t);if(!t)return;if(c==='help')help();else if(c==='ls')ls(parts.includes('-la')||parts.includes('-a'));else if(c==='cat')catFile(parts[1]);else if(c==='stat')statFile(parts[1]);else if(c==='strings')stringsFile(parts[1]);else if(c==='history')history();else if(c==='pwd')print('/home/moth/archive_333');else if(c==='whoami')print('moth');else if(c==='clear')out.innerHTML='';else if(c==='solve')solveAnswer(parts.slice(1).join(' '));else print(c+': command not found','dim')}
+cmd.addEventListener('keydown',e=>{
+  ensureAudio();
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const v=cmd.value;
+    cmd.value='';
+    run(v);
+  }
+});
+window.addEventListener('load',()=>setTimeout(()=>cmd.focus(),50));
+document.body.addEventListener('click',()=>cmd.focus());
+setTimeout(()=>{if(!solved)print('<span class="dim">[03:33:33] still there?</span>')},33300);
+</script></body></html>
