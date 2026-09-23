@@ -1,0 +1,1318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RLM // FIREFLY</title>
+<style>
+:root{
+  --bg:#010203;
+  --fg:#d9deda;
+  --dim:#6b7470;
+  --seal:#bac6c2;
+  --silent:#a71920;
+  --storm:#76878a;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;width:100%;height:100%;overflow:hidden;
+  background:#010203;color:var(--fg);
+  font-family:"Courier New",monospace;
+}
+body{cursor:crosshair}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#storm{z-index:1}
+#net{z-index:5}
+
+#clouds{
+  position:fixed;inset:-8%;z-index:2;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 18% 18%,rgba(150,163,166,.09),transparent 24%),
+    radial-gradient(ellipse at 79% 15%,rgba(128,145,149,.09),transparent 25%),
+    radial-gradient(ellipse at 48% 47%,rgba(132,144,146,.045),transparent 28%),
+    radial-gradient(ellipse at 25% 82%,rgba(128,141,144,.085),transparent 27%),
+    radial-gradient(ellipse at 83% 77%,rgba(150,160,161,.075),transparent 31%);
+  filter:blur(9px);
+  animation:cloudMove 9s ease-in-out infinite alternate;
+}
+@keyframes cloudMove{
+  from{transform:translate(-1.5%,-1%) scale(1.04)}
+  to{transform:translate(1.8%,1.2%) scale(1.10)}
+}
+
+#scan{
+  position:fixed;inset:0;z-index:18;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.017) 0 1px,transparent 1px 4px),
+    linear-gradient(90deg,rgba(110,0,8,.018),transparent 33%,rgba(110,0,8,.02));
+  mix-blend-mode:screen;
+}
+#vignette{
+  position:fixed;inset:0;z-index:17;pointer-events:none;
+  box-shadow:
+    inset 0 0 170px 65px rgba(0,0,0,.88),
+    inset 0 0 420px 120px rgba(0,0,0,.52);
+}
+#angelGhost{
+  position:fixed;inset:0;z-index:13;pointer-events:none;
+  display:grid;place-items:center;
+  opacity:0;
+  mix-blend-mode:screen;
+}
+#angelGhost img{
+  width:min(84vw,1050px);height:min(92vh,980px);object-fit:contain;
+  filter:grayscale(1) contrast(3.2) brightness(.19) blur(.35px);
+  transform:scale(1.14);
+}
+#angelGhost.flash{animation:angelBlink .23s steps(2)}
+@keyframes angelBlink{
+  0%{opacity:0}
+  16%{opacity:.26}
+  30%{opacity:.015}
+  51%{opacity:.14}
+  64%{opacity:0}
+  100%{opacity:0}
+}
+#glitch{
+  position:fixed;inset:0;z-index:24;pointer-events:none;opacity:0;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 57px,rgba(255,255,255,.05) 58px,transparent 60px),
+    linear-gradient(0deg,rgba(130,0,7,.12),transparent 48%);
+}
+#glitch.hit{animation:glitchHit .20s steps(3)}
+@keyframes glitchHit{
+  0%{opacity:0;transform:none}
+  18%{opacity:.9;transform:translateX(-8px)}
+  42%{opacity:.12;transform:translateX(4px)}
+  61%{opacity:.65;transform:translateY(3px)}
+  100%{opacity:0;transform:none}
+}
+
+#hud{position:fixed;inset:0;z-index:30;pointer-events:none}
+#topLeft{position:absolute;left:24px;top:22px}
+#title{font-size:12px;letter-spacing:.18em;color:#aeb6b2}
+#sub{margin-top:7px;font-size:10px;color:#606864;letter-spacing:.09em}
+.strike{text-decoration:line-through;color:#4c5350}
+#status{
+  position:absolute;right:24px;top:22px;text-align:right;
+  font-size:9px;line-height:1.65;color:#606865;letter-spacing:.08em;
+}
+.hot{color:#a9282d}
+#bottom{
+  position:absolute;left:50%;bottom:20px;transform:translateX(-50%);
+  text-align:center;color:#4c5551;font-size:9px;letter-spacing:.12em;
+}
+#stormStatus{
+  position:absolute;left:24px;bottom:20px;
+  color:#535d59;font-size:9px;letter-spacing:.10em;
+}
+#endComm{
+  position:fixed;inset:0;z-index:70;display:none;place-items:center;
+  background:radial-gradient(circle at 50% 48%,rgba(18,0,2,.28),rgba(0,0,0,.95) 48%,#000 100%);
+  text-align:center;padding:24px;
+}
+#endComm.show{display:grid}
+#endComm .wrap{max-width:min(900px,86vw)}
+#endComm .big{font-size:clamp(24px,4vw,54px);letter-spacing:.22em;color:#d7dbd8;text-shadow:0 0 18px #000;margin-bottom:18px}
+#endComm .small{font-size:11px;line-height:1.9;letter-spacing:.16em;color:#858d89}
+body.ragnarok #clouds{animation-duration:2.8s;filter:blur(12px) brightness(1.1)}
+body.ragnarok #scan{opacity:.88}
+body.ragnarok #vignette{box-shadow:inset 0 0 170px 65px rgba(20,0,0,.92), inset 0 0 420px 120px rgba(0,0,0,.72)}
+body.ragnarok{background:#000}
+
+#message{
+  position:fixed;z-index:31;left:50%;top:50%;
+  width:min(820px,84vw);
+  transform:translate(-50%,-50%);
+  text-align:center;pointer-events:none;
+  opacity:0;transition:opacity .6s;
+  text-shadow:0 0 22px #000;
+}
+#message.show{opacity:1}
+#message .big{
+  font-size:clamp(19px,3.2vw,44px);
+  letter-spacing:.20em;
+  line-height:1.3;
+}
+#message .small{
+  margin-top:14px;font-size:11px;line-height:1.8;
+  color:#929b97;letter-spacing:.11em;
+}
+
+#seals{position:fixed;inset:0;z-index:10}
+.seal{
+  position:absolute;
+  width:120px;height:120px;
+  transform:translate(-50%,-50%);
+  pointer-events:auto;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  user-select:none;
+}
+.ring,.ring2,.ring3{
+  position:absolute;border-radius:50%;
+  border:1px solid rgba(180,193,189,.30);
+}
+.ring{inset:13px}
+.ring2{inset:25px;border-style:dashed;opacity:.7;animation:spin 15s linear infinite}
+.ring3{inset:36px;opacity:.55;animation:spinBack 11s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinBack{to{transform:rotate(-360deg)}}
+.glyph{
+  font-size:20px;color:rgba(215,222,219,.76);
+  text-shadow:0 0 10px rgba(205,215,212,.24);
+}
+.sealLabel{
+  position:absolute;top:104px;left:50%;transform:translateX(-50%);
+  width:190px;text-align:center;
+  font-size:10px;letter-spacing:.09em;color:#a7afab;
+  text-shadow:0 0 8px #000,0 0 16px #000;
+}
+.sealState{
+  margin-top:4px;font-size:8px;letter-spacing:.11em;color:#59625e;
+}
+.seal:hover .ring{
+  border-color:rgba(225,232,229,.55);
+}
+.seal.active:hover{filter:drop-shadow(0 0 8px rgba(205,215,212,.18))}
+.seal.silent .ring{
+  border-color:rgba(170,23,31,.72);
+  border-top-color:transparent;
+  border-right-color:rgba(170,23,31,.15);
+  transform:rotate(18deg);
+}
+.seal.silent .ring2{
+  border-color:rgba(145,20,27,.45);
+  animation-duration:7s;
+}
+.seal.silent .glyph{color:#ac252c}
+.seal.silent .sealState{color:#9d252a}
+.seal.opened{
+  filter:drop-shadow(0 0 13px rgba(170,30,36,.35));
+}
+.seal.opened .ring{
+  animation:brokenPulse .7s ease-out 2;
+}
+@keyframes brokenPulse{
+  0%{transform:scale(1) rotate(18deg);opacity:1}
+  60%{transform:scale(1.34) rotate(27deg);opacity:.22}
+  100%{transform:scale(1) rotate(18deg);opacity:.8}
+}
+
+#breach{
+  position:fixed;left:50%;top:50%;z-index:7;
+  width:90px;height:90px;transform:translate(-50%,-50%) scale(.1);
+  border-radius:50%;
+  opacity:0;pointer-events:none;
+  border:1px solid rgba(150,20,27,.1);
+  box-shadow:
+    0 0 20px rgba(125,10,17,.2),
+    0 0 80px rgba(115,8,13,.18),
+    inset 0 0 45px rgba(0,0,0,.95);
+  background:
+    radial-gradient(circle,#000 0 43%,rgba(40,0,3,.75) 44%,rgba(0,0,0,0) 69%);
+}
+#breach.open{
+  animation:breachOpen 5s cubic-bezier(.2,.7,.1,1) forwards,
+             breathe 4.4s ease-in-out 5s infinite;
+}
+@keyframes breachOpen{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.1)}
+  25%{opacity:.35}
+  100%{opacity:.9;transform:translate(-50%,-50%) scale(4.1)}
+}
+@keyframes breathe{
+  0%,100%{filter:brightness(.75);box-shadow:0 0 30px rgba(100,0,7,.18),0 0 95px rgba(80,0,6,.18)}
+  50%{filter:brightness(1.22);box-shadow:0 0 45px rgba(140,7,16,.26),0 0 125px rgba(100,0,9,.28)}
+}
+
+#whisper{
+  position:fixed;z-index:26;left:50%;top:76%;
+  transform:translate(-50%,-50%);
+  color:rgba(200,205,202,.13);
+  letter-spacing:.18em;font-size:10px;
+  pointer-events:none;opacity:0;
+}
+#whisper.show{animation:whisper 2.3s ease both}
+@keyframes whisper{
+  0%{opacity:0;filter:blur(5px)}
+  25%{opacity:.42;filter:blur(.4px)}
+  70%{opacity:.19}
+  100%{opacity:0;filter:blur(4px)}
+}
+
+#enter{
+  position:fixed;inset:0;z-index:50;
+  display:grid;place-items:center;
+  background:
+    radial-gradient(circle at 50% 45%,#0a0d0e 0,#040506 42%,#010202 78%);
+}
+#enterBox{
+  width:min(690px,87vw);
+  background:rgba(2,3,4,.9);
+  border:1px solid #21282a;
+  padding:28px 30px 24px;
+  box-shadow:0 0 100px rgba(0,0,0,.9);
+}
+#enterBox h1{
+  margin:0 0 14px;font-size:19px;font-weight:normal;letter-spacing:.22em;
+}
+#enterBox p{
+  margin:7px 0;color:#77817c;font-size:11px;line-height:1.75;
+}
+#enterBtn{
+  margin-top:18px;background:#07090a;color:#ccd1ce;
+  border:1px solid #333c3e;padding:10px 20px;
+  font:12px "Courier New",monospace;letter-spacing:.14em;cursor:pointer;
+}
+#enterBtn:hover{border-color:#707a7b;color:#fff}
+
+
+#soloSeal{
+  position:fixed;
+  left:88%;
+  top:39%;
+  width:72px;
+  height:72px;
+  z-index:11;
+  transform:translate(-50%,-50%);
+  pointer-events:auto;
+  cursor:pointer;
+  opacity:.72;
+  filter:drop-shadow(0 0 5px rgba(190,200,198,.08));
+}
+#soloSeal .sring,#soloSeal .sring2{
+  position:absolute;
+  border-radius:50%;
+  border:1px solid rgba(180,193,189,.25);
+}
+#soloSeal .sring{inset:7px}
+#soloSeal .sring2{
+  inset:17px;
+  border-style:dashed;
+  opacity:.65;
+  animation:spinBack 13s linear infinite;
+}
+#soloSeal .sglyph{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  color:rgba(210,218,215,.68);
+  font-size:14px;
+}
+#soloSeal .slabel{
+  position:absolute;
+  top:70px;
+  left:50%;
+  transform:translateX(-50%);
+  width:170px;
+  text-align:center;
+  font-size:8px;
+  letter-spacing:.09em;
+  color:#7a837f;
+  text-shadow:0 0 8px #000,0 0 14px #000;
+}
+#soloSeal .sstate{
+  margin-top:3px;
+  color:#555e5a;
+  font-size:7px;
+  letter-spacing:.11em;
+}
+#soloSeal:hover{opacity:.94}
+#soloSeal:hover .sring{border-color:rgba(220,228,225,.48)}
+#soloSeal.disturbed{animation:soloDisturb .7s steps(2)}
+@keyframes soloDisturb{
+  0%{transform:translate(-50%,-50%) rotate(0deg)}
+  25%{transform:translate(-52%,-48%) rotate(-2deg)}
+  50%{transform:translate(-49%,-51%) rotate(2deg)}
+  100%{transform:translate(-50%,-50%) rotate(0deg)}
+}
+
+
+#warningOverlay{
+  position:fixed;inset:0;z-index:60;display:none;place-items:center;
+  background:rgba(0,0,0,.78);
+  backdrop-filter:blur(2px);
+}
+#warningOverlay.show{display:grid}
+#warningBox{
+  width:min(720px,88vw);
+  padding:28px 30px 24px;
+  background:#050607;
+  border:1px solid #5d171c;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.02),
+    0 0 60px rgba(110,0,8,.28),
+    inset 0 0 45px rgba(70,0,5,.10);
+}
+#warningTitle{
+  font-size:15px;letter-spacing:.16em;color:#b72a30;margin-bottom:16px;
+}
+#warningText{
+  color:#a5aca8;font-size:11px;line-height:1.8;letter-spacing:.08em;
+}
+#warningButtons{margin-top:22px;display:flex;gap:10px}
+#warningButtons button{
+  background:#090b0c;color:#c9cfcc;border:1px solid #393f40;
+  padding:9px 14px;font:11px "Courier New",monospace;
+  letter-spacing:.10em;cursor:pointer;
+}
+#warningButtons button:hover{border-color:#8b262c}
+#warningAbort{opacity:.58}
+
+#strainStatus{
+  position:absolute;right:24px;bottom:20px;
+  color:#626a67;font-size:9px;letter-spacing:.11em;text-align:right;
+}
+#strainStatus .danger{color:#b72a30}
+
+#ragnarokFX{
+  position:fixed;inset:0;z-index:64;pointer-events:none;display:none;
+  background:
+    radial-gradient(circle at 50% 50%,transparent 0 22%,rgba(130,0,10,.15) 43%,rgba(0,0,0,.35) 74%),
+    repeating-linear-gradient(90deg,transparent 0 41px,rgba(255,255,255,.035) 42px,transparent 44px);
+}
+#ragnarokFX.on{display:block;animation:ragnarokShake .11s steps(2) infinite}
+#ragnarokFX::before,
+#ragnarokFX::after{
+  content:"";position:absolute;inset:0;opacity:0;
+}
+#ragnarokFX.on::before{
+  background:white;
+  animation:hardFlash 1.15s steps(1) 3;
+}
+#ragnarokFX.on::after{
+  background:
+    linear-gradient(90deg,rgba(120,0,0,.75),transparent 18%,rgba(255,255,255,.13) 51%,transparent 72%,rgba(90,0,0,.6)),
+    repeating-linear-gradient(0deg,transparent 0 12px,rgba(255,255,255,.08) 13px,transparent 15px);
+  animation:tearFrame .15s steps(2) infinite;
+}
+@keyframes hardFlash{
+  0%,100%{opacity:0}
+  10%{opacity:.82}
+  13%{opacity:0}
+  34%{opacity:.48}
+  38%{opacity:0}
+  61%{opacity:.72}
+  65%{opacity:0}
+}
+@keyframes tearFrame{
+  0%{opacity:.16;transform:translateX(-12px) scaleX(1.01)}
+  50%{opacity:.45;transform:translateX(11px) scaleX(.995)}
+  100%{opacity:.20;transform:translateY(6px)}
+}
+@keyframes ragnarokShake{
+  0%{transform:translate(0,0)}
+  25%{transform:translate(-4px,3px)}
+  50%{transform:translate(5px,-3px)}
+  75%{transform:translate(-2px,-4px)}
+  100%{transform:translate(3px,4px)}
+}
+
+body.ragnarok #seals{
+  animation:sealFieldTear .19s steps(2) infinite;
+}
+body.ragnarok #soloSeal{
+  animation:soloRagnarok .14s steps(2) infinite;
+}
+@keyframes sealFieldTear{
+  0%{transform:translate(0,0)}
+  50%{transform:translate(7px,-5px)}
+  100%{transform:translate(-5px,4px)}
+}
+@keyframes soloRagnarok{
+  0%{transform:translate(-50%,-50%) rotate(-4deg) scale(1)}
+  50%{transform:translate(-46%,-54%) rotate(8deg) scale(1.15)}
+  100%{transform:translate(-53%,-47%) rotate(-9deg) scale(.96)}
+}
+
+#logFallback{
+  margin-top:16px;font-size:9px;color:#59615e;letter-spacing:.08em;
+}
+#logFallback a{color:#8d282d;text-decoration:none}
+#logFallback a:hover{text-decoration:underline}
+
+@media(max-width:760px){
+  #status{display:none}
+  #topLeft{left:15px;top:15px}
+  #stormStatus{left:15px}
+  .seal{width:92px;height:92px}
+  .sealLabel{top:84px;width:140px;font-size:8px}
+  .ring{inset:10px}.ring2{inset:20px}.ring3{inset:29px}
+}
+</style>
+</head>
+<body>
+<canvas id="storm"></canvas>
+<div id="clouds"></div>
+<canvas id="net"></canvas>
+
+<div id="breach"></div>
+<div id="seals"></div>
+<div id="soloSeal" title="">
+  <div class="sring"></div>
+  <div class="sring2"></div>
+  <div class="sglyph">IX</div>
+  <div class="slabel">FLANDRES ET ARTOIS<div class="sstate">AUX // SOLO SEAL</div></div>
+</div>
+
+
+<div id="angelGhost"><img src="angel.png" alt=""></div>
+<div id="whisper"></div>
+<div id="glitch"></div>
+<div id="scan"></div>
+<div id="vignette"></div>
+
+<div id="hud">
+  <div id="topLeft">
+    <div id="title">RLM // FIREFLY</div>
+    <div id="sub"><span class="strike">NETWORK MODEL</span> → PERCEPTION MODEL</div>
+  </div>
+
+  <div id="status">
+    LOCAL OBSERVER ........ <span class="hot">CONNECTED</span><br>
+    CITY TABLE ............ 8/8<br>
+    SEALS .................. 8 + 1 AUX<br>
+    SILENT ................. <span class="hot" id="silentCount">2</span><br>
+    BREACH ACCESS .......... <span id="breachStatus">LOCKED</span><br>
+    STORM .................. EVERYWHERE
+  </div>
+
+  <div id="message">
+    <div class="big" id="msgBig"></div>
+    <div class="small" id="msgSmall"></div>
+  </div>
+
+  <div id="stormStatus">NO CLEAR SKY DETECTED</div>
+  <div id="strainStatus">PERCEPTION INTEGRITY // <span id="strainValue">STABLE</span></div><div id="bottom">FIREFLY LOCAL VISUALIZER // BUILD 0.9.17</div>
+</div>
+
+
+<div id="warningOverlay">
+  <div id="warningBox">
+    <div id="warningTitle">PERCEPTION WARNING</div>
+    <div id="warningText"></div>
+    <div id="warningButtons">
+      <button id="warningContinue">CONTINUE OBSERVATION</button>
+      <button id="warningAbort">STOP TOUCHING THE MODEL</button>
+    </div>
+  </div>
+</div>
+
+<div id="ragnarokFX"></div>
+
+<div id="endComm"><div class="wrap"><div class="big" id="endBig">END OF COMMUNICATION</div><div class="small" id="endSmall">LINK SEVERED // OBSERVER STATE UNKNOWN</div><div id="logFallback"></div></div></div>
+
+<div id="enter">
+  <div id="enterBox">
+    <h1>RLM</h1>
+    <p>FIREFLY NETWORK MODEL</p>
+    <p>LOCAL OBSERVER DETECTED.</p>
+    <p>STORM FIELD: PRESENT AT ALL COORDINATES.</p>
+    <p>THE CONNECTION IS ALREADY OPEN.</p>
+    <button id="enterBtn">ENTER</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+const EMAILJS_SERVICE_ID='service_3zdgrrm';
+const EMAILJS_TEMPLATE_ID='template_4goh9jc';
+const EMAILJS_PUBLIC_KEY='nb-zeEPXeqDiRr1IC';
+const INCIDENT_TO='333.lockelle@gmail.com';
+
+const stormCanvas=document.getElementById('storm');
+const storm=stormCanvas.getContext('2d');
+const netCanvas=document.getElementById('net');
+const net=netCanvas.getContext('2d');
+
+const sealsEl=document.getElementById('seals');
+const msg=document.getElementById('message');
+const msgBig=document.getElementById('msgBig');
+const msgSmall=document.getElementById('msgSmall');
+const breach=document.getElementById('breach');
+const breachStatus=document.getElementById('breachStatus');
+const ghost=document.getElementById('angelGhost');
+const glitchEl=document.getElementById('glitch');
+const whisperEl=document.getElementById('whisper');
+const endComm=document.getElementById('endComm');
+const endBig=document.getElementById('endBig');
+const endSmall=document.getElementById('endSmall');
+const soloSeal=document.getElementById('soloSeal');
+const warningOverlay=document.getElementById('warningOverlay');
+const warningTitle=document.getElementById('warningTitle');
+const warningText=document.getElementById('warningText');
+const warningContinue=document.getElementById('warningContinue');
+const warningAbort=document.getElementById('warningAbort');
+const ragnarokFX=document.getElementById('ragnarokFX');
+const strainValue=document.getElementById('strainValue');
+const logFallback=document.getElementById('logFallback');
+
+let W=innerWidth,H=innerHeight,DPR=Math.min(devicePixelRatio||1,2);
+let time=0,entered=false,openedSilent=new Set(),audioCtx=null;
+let lastLightning=0,nextWhisper=0;
+let ragnarokStarted=false;
+let ended=false;
+let stormAmp=1;
+let interactionCount=0;
+let warningLevel=0;
+let pendingWarning=false;
+let incidentLogURL=null;
+const WARNING_STEPS=[3,6,8];
+const RAGNAROK_CLICK=10;
+
+const nodes=[
+ {id:'01',name:'YS',x:.50,y:.14,state:'SEALED',glyph:'I'},
+ {id:'02',name:'LES JARDINS',x:.22,y:.27,state:'SEALED',glyph:'II'},
+ {id:'03',name:'DEUX SAVOIES',x:.78,y:.27,state:'SEALED',glyph:'III'},
+ {id:'04',name:'CITE BLANCHE',x:.15,y:.62,state:'SEALED',glyph:'IV'},
+ {id:'05',name:'MONTPELLIERAIN',x:.85,y:.62,state:'SEALED',glyph:'V'},
+ {id:'06',name:"PORTE D'ONEIROS",x:.32,y:.82,state:'SEALED',glyph:'VI'},
+ {id:'07',name:'DEUX VALLEES',x:.68,y:.82,state:'SILENT',glyph:'VII',silent:true},
+ {id:'08',name:'NATIO',x:.50,y:.50,state:'SILENT',glyph:'VIII',silent:true,natio:true}
+];
+
+const edges=[
+ ['01','05'],['01','06'],['01','07'],['01','08'],
+ ['02','01'],['02','05'],
+ ['03','01'],['03','08'],
+ ['04','02'],['04','03'],
+ ['05','02'],['05','06'],['05','07'],
+ ['06','03'],['06','04'],['06','08'],
+ ['07','04'],['08','03']
+];
+
+const motes=Array.from({length:250},()=>({
+  x:Math.random()*W,y:Math.random()*H,
+  vx:-2.6+Math.random()*5.2,
+  vy:2.2+Math.random()*7.4,
+  len:10+Math.random()*55,
+  a:.025+Math.random()*.14,
+  s:.5+Math.random()*1.3
+}));
+
+function resize(){
+  W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);
+  [stormCanvas,netCanvas].forEach(c=>{
+    c.width=W*DPR;c.height=H*DPR;c.style.width=W+'px';c.style.height=H+'px';
+  });
+  storm.setTransform(DPR,0,0,DPR,0,0);
+  net.setTransform(DPR,0,0,DPR,0,0);
+  positionSeals();
+}
+addEventListener('resize',resize);
+
+function byId(id){return nodes.find(n=>n.id===id)}
+
+function makeSeals(){
+  sealsEl.innerHTML='';
+  nodes.forEach(n=>{
+    const el=document.createElement('div');
+    el.className='seal '+(n.silent?'silent':'active');
+    el.dataset.id=n.id;
+    el.innerHTML=`
+      <div class="ring"></div>
+      <div class="ring2"></div>
+      <div class="ring3"></div>
+      <div class="glyph">${n.glyph}</div>
+      <div class="sealLabel">
+        ${n.name}
+        <div class="sealState">${n.id} // ${n.state}</div>
+      </div>`;
+    el.addEventListener('click',()=>sealClick(n));
+    sealsEl.appendChild(el);
+    n.el=el;
+  });
+  positionSeals();
+}
+
+function positionSeals(){
+  nodes.forEach(n=>{
+    if(!n.el)return;
+    n.el.style.left=(n.x*W)+'px';
+    n.el.style.top=(n.y*H)+'px';
+  });
+}
+
+function showMessage(big,small='',duration=2800){
+  msgBig.textContent=big;
+  msgSmall.textContent=small;
+  msg.classList.add('show');
+  clearTimeout(showMessage.t);
+  showMessage.t=setTimeout(()=>msg.classList.remove('show'),duration);
+}
+
+function doGlitch(){
+  glitchEl.classList.remove('hit');
+  void glitchEl.offsetWidth;
+  glitchEl.classList.add('hit');
+}
+
+function angelFlash(){
+  ghost.classList.remove('flash');
+  void ghost.offsetWidth;
+  ghost.classList.add('flash');
+}
+
+function whisper(text){
+  whisperEl.textContent=text;
+  whisperEl.classList.remove('show');
+  void whisperEl.offsetWidth;
+  whisperEl.classList.add('show');
+}
+
+function ensureAudio(){
+  if(audioCtx)return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+
+  // Low, almost sub-audible mechanical drone.
+  const o1=audioCtx.createOscillator();
+  const g1=audioCtx.createGain();
+  const f1=audioCtx.createBiquadFilter();
+  o1.type='sawtooth';o1.frequency.value=43;
+  f1.type='lowpass';f1.frequency.value=150;
+  g1.gain.value=.013;
+  o1.connect(f1).connect(g1).connect(audioCtx.destination);
+  o1.start();
+
+  const o2=audioCtx.createOscillator();
+  const g2=audioCtx.createGain();
+  o2.type='sine';o2.frequency.value=71;
+  g2.gain.value=.006;
+  o2.connect(g2).connect(audioCtx.destination);
+  o2.start();
+
+  const o3=audioCtx.createOscillator();
+  const g3=audioCtx.createGain();
+  o3.type='sine';o3.frequency.value=139;
+  g3.gain.value=.0015;
+  o3.connect(g3).connect(audioCtx.destination);
+  o3.start();
+}
+
+function noiseBurst(strong=false){
+  if(!audioCtx)return;
+  const dur=strong?.44:.18;
+  const n=Math.floor(audioCtx.sampleRate*dur);
+  const buf=audioCtx.createBuffer(1,n,audioCtx.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<n;i++){
+    data[i]=(Math.random()*2-1)*(1-i/n);
+  }
+  const src=audioCtx.createBufferSource();
+  const f=audioCtx.createBiquadFilter();
+  const g=audioCtx.createGain();
+  src.buffer=buf;
+  f.type='bandpass';
+  f.frequency.value=strong?420:800;
+  f.Q.value=.65;
+  g.gain.value=strong?.085:.025;
+  src.connect(f).connect(g).connect(audioCtx.destination);
+  src.start();
+}
+
+function thunder(){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
+  o.type='sawtooth';
+  o.frequency.value=48+Math.random()*20;
+  f.type='lowpass';f.frequency.value=125;
+  g.gain.setValueAtTime(.0001,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.035,audioCtx.currentTime+.025);
+  g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.95);
+  o.connect(f).connect(g).connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+1);
+}
+
+
+function soloSealClick(){
+  if(!entered||ended||pendingWarning)return;
+  if(registerInteraction())return;
+  soloSeal.classList.remove('disturbed');
+  void soloSeal.offsetWidth;
+  soloSeal.classList.add('disturbed');
+  noiseBurst(false);
+  if(Math.random()<.28)angelFlash();
+  showMessage('FLANDRES ET ARTOIS','AUXILIARY SEAL // ISOLATED',1700);
+  if(Math.random()<.45) whisper('this one is not on the map');
+}
+
+function sealClick(n){
+  ensureAudio();
+
+  if(!entered||pendingWarning||ended)return;
+
+  if(!n.silent){
+    if(registerInteraction())return;
+    showMessage(n.name,'SEAL CLOSED // NO ACCESS',1500);
+    noiseBurst(false);
+    if(Math.random()<.22)angelFlash();
+    return;
+  }
+
+  if(openedSilent.has(n.id)){
+    if(registerInteraction())return;
+    showMessage(n.name,'SILENT SEAL // PATH ALREADY EXPOSED',1700);
+    return;
+  }
+
+  if(registerInteraction())return;
+  openedSilent.add(n.id);
+  n.el.classList.add('opened');
+  noiseBurst(true);
+  doGlitch();
+
+  if(n.id==='08'){
+    showMessage('NATIO','SILENCE PREDATES OBSERVATION',2500);
+    whisper('it was already open');
+  }else{
+    showMessage('DEUX VALLEES','SEAL FAILED AFTER RECOVERY',2500);
+    whisper('you watched this one die');
+  }
+
+  if(openedSilent.size===2){
+    setTimeout(unlockBreach,2900);
+  }
+}
+
+
+
+function updateStrain(){
+  if(!strainValue)return;
+  let label='STABLE';
+  if(interactionCount>=3) label='DRIFT';
+  if(interactionCount>=6) label='UNRELIABLE';
+  if(interactionCount>=8) label='CRITICAL';
+  if(interactionCount>=RAGNAROK_CLICK) label='FAILED';
+  strainValue.textContent=label;
+  strainValue.className=interactionCount>=6?'danger':'';
+}
+
+function warningCopy(level){
+  if(level===1){
+    return {
+      title:'PERCEPTION WARNING',
+      text:`Firefly's RLM is a perception model, not a neutral map.
+
+Repeated seal interaction is feeding observer input back into the model.
+
+Further interaction may alter what you are seeing.`
+    };
+  }
+  if(level===2){
+    return {
+      title:'OBSERVER FEEDBACK DETECTED',
+      text:`The rendered RLM is diverging from Firefly's recorded perception.
+
+Seal geometry, storm behaviour and entity placement may no longer represent the original observation.
+
+Continuing may make the distortion irreversible.`
+    };
+  }
+  return {
+    title:'FINAL PERCEPTION WARNING',
+    text:`The model can no longer distinguish observation from intervention.
+
+Another forced interaction may collapse Firefly's perception layer.
+
+Severe visual instability and loss of communication are expected.`
+  };
+}
+
+function showPerceptionWarning(level){
+  warningLevel=level;
+  pendingWarning=true;
+  const w=warningCopy(level);
+  warningTitle.textContent=w.title;
+  warningText.textContent=w.text;
+  warningOverlay.classList.add('show');
+  doGlitch();
+  noiseBurst(level>=2);
+  if(level>=2) angelFlash();
+}
+
+function registerInteraction(){
+  if(ended||ragnarokStarted)return false;
+
+  interactionCount++;
+  updateStrain();
+
+  if(interactionCount===WARNING_STEPS[0]){
+    showPerceptionWarning(1);
+  }else if(interactionCount===WARNING_STEPS[1]){
+    showPerceptionWarning(2);
+  }else if(interactionCount===WARNING_STEPS[2]){
+    showPerceptionWarning(3);
+  }
+
+  if(interactionCount>=RAGNAROK_CLICK){
+    startRagnarok();
+    return true;
+  }
+
+  return false;
+}
+
+function localTimestamp(){
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const local=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const filename=`RLM_RAGNAROK_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.txt`;
+  return {d,local,filename};
+}
+
+function writeIncidentLog(){
+  const t=localTimestamp();
+  const body=[
+    'FIREFLY // RLM INCIDENT LOG',
+    '',
+    'EVENT: RAGNAROK',
+    `LOCAL DATE/TIME: ${t.local}`,
+    `ISO: ${t.d.toISOString()}`,
+    `SEAL INTERACTIONS: ${interactionCount}`,
+    `SILENT SEALS OPENED: ${openedSilent.size}/2`,
+    '',
+    'PERCEPTION MODEL: COLLAPSED',
+    'COMMUNICATION: LOST',
+    'OBSERVER: LOCAL',
+    '',
+    'END OF COMMUNICATION'
+  ].join('\\n');
+
+  try{
+    localStorage.setItem('ff_rlm_ragnarok_timestamp',t.local);
+    localStorage.setItem('ff_rlm_ragnarok_log',body);
+  }catch(e){}
+
+  const blob=new Blob([body],{type:'text/plain;charset=utf-8'});
+  incidentLogURL=URL.createObjectURL(blob);
+
+  const a=document.createElement('a');
+  a.href=incidentLogURL;
+  a.download=t.filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  logFallback.innerHTML=`incident log: <a href="${incidentLogURL}" download="${t.filename}">${t.filename}</a>`;
+  return t;
+}
+
+function ragnarokAudio(){
+  if(!audioCtx)return;
+
+  // Falling siren
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  const f=audioCtx.createBiquadFilter();
+  o.type='sawtooth';
+  o.frequency.setValueAtTime(980,audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(47,audioCtx.currentTime+5.2);
+  f.type='bandpass';f.frequency.value=620;f.Q.value=.7;
+  g.gain.setValueAtTime(.0001,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.16,audioCtx.currentTime+.08);
+  g.gain.exponentialRampToValueAtTime(.035,audioCtx.currentTime+4.7);
+  g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+6.2);
+  o.connect(f).connect(g).connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+6.3);
+
+  // Repeated broadband impacts
+  [0,.38,.82,1.31,1.86,2.50,3.20,4.05].forEach((delay,i)=>{
+    setTimeout(()=>{
+      noiseBurst(true);
+      thunder();
+      if(i%2===0) angelFlash();
+      doGlitch();
+    },delay*1000);
+  });
+}
+
+
+async function sendRagnarokEmail(incident){
+  const onceKey='ff_rlm_email_sent';
+
+  try{
+    if(localStorage.getItem(onceKey)==='1'){
+      return {ok:true,skipped:true};
+    }
+  }catch(e){}
+
+  const subject=`RLM // RAGNAROK // ${incident.local}`;
+  const message=[
+    'FIREFLY // RLM INCIDENT LOG',
+    '',
+    'EVENT: RAGNAROK',
+    `LOCAL DATE/TIME: ${incident.local}`,
+    `ISO: ${incident.d.toISOString()}`,
+    `SEAL INTERACTIONS: ${interactionCount}`,
+    `SILENT SEALS OPENED: ${openedSilent.size}/2`,
+    '',
+    'PERCEPTION MODEL: COLLAPSED',
+    'COMMUNICATION: LOST',
+    'OBSERVER: LOCAL',
+    '',
+    'END OF COMMUNICATION'
+  ].join('\n');
+
+  const params={
+    // Generic variables for EmailJS default/contact templates:
+    name:'FIREFLY // RLM',
+    from_name:'FIREFLY // RLM',
+    email:INCIDENT_TO,
+    from_email:INCIDENT_TO,
+    reply_to:INCIDENT_TO,
+    to_email:INCIDENT_TO,
+    subject,
+    title:subject,
+    message,
+
+    // ARG-specific variables if you decide to use them in the template:
+    incident_time:incident.local,
+    incident_iso:incident.d.toISOString(),
+    interactions:String(interactionCount),
+    silent_seals:`${openedSilent.size}/2`,
+    event:'RAGNAROK',
+    perception_model:'COLLAPSED',
+    communication:'LOST'
+  };
+
+  try{
+    if(!window.emailjs){
+      throw new Error('EmailJS SDK unavailable');
+    }
+
+    window.emailjs.init({publicKey:EMAILJS_PUBLIC_KEY});
+    await window.emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      params
+    );
+
+    try{
+      localStorage.setItem(onceKey,'1');
+    }catch(e){}
+
+    return {ok:true,skipped:false};
+  }catch(err){
+    console.error('RLM incident email failed:',err);
+    return {ok:false,error:err};
+  }
+}
+
+function startRagnarok(){
+  if(ragnarokStarted||ended)return;
+
+  ragnarokStarted=true;
+  warningOverlay.classList.remove('show');
+
+  const incident=writeIncidentLog();
+
+  sendRagnarokEmail(incident).then(result=>{
+    if(result.ok){
+      document.getElementById('bottom').textContent =
+        result.skipped
+          ? 'INCIDENT ALREADY TRANSMITTED // ENDPOINT LOCKED'
+          : 'INCIDENT TRANSMITTED // 333.LOCKELLE';
+    }else{
+      document.getElementById('bottom').textContent =
+        'INCIDENT TRANSMISSION FAILED // LOCAL LOG PRESERVED';
+    }
+  });
+
+  document.body.classList.add('ragnarok');
+  ragnarokFX.classList.add('on');
+  stormAmp=8.5;
+
+  breach.classList.add('open');
+  breachStatus.innerHTML='<span class="hot">FAILED</span>';
+
+  nodes.forEach((n,i)=>{
+    setTimeout(()=>{
+      n.el.classList.add('opened');
+      n.el.style.filter='drop-shadow(0 0 18px rgba(190,25,32,.85))';
+    },i*85);
+  });
+
+  soloSeal.classList.add('disturbed');
+
+  ragnarokAudio();
+  doGlitch();
+  angelFlash();
+  whisper('you changed the way he saw it');
+
+  showMessage(
+    'RAGNAROK',
+    `PERCEPTION COLLAPSE // ${incident.local}`,
+    2200
+  );
+
+  setTimeout(()=>{
+    showMessage(
+      'FIREFLY MODEL LOST',
+      'THE STORM IS NO LONGER A REPRESENTATION.',
+      2100
+    );
+    whisper('there is nothing outside the storm');
+  },1900);
+
+  setTimeout(()=>{
+    showMessage(
+      'OBSERVER FEEDBACK',
+      'SOURCE AND IMAGE CAN NO LONGER BE SEPARATED.',
+      2100
+    );
+    angelFlash();
+  },3650);
+
+  setTimeout(()=>{
+    ragnarokFX.classList.remove('on');
+    endBig.textContent='END OF COMMUNICATION';
+    endSmall.textContent=`LINK SEVERED // INCIDENT RECORDED ${incident.local}`;
+    endComm.classList.add('show');
+    ended=true;
+  },6100);
+}
+
+
+function unlockBreach(){
+  breachStatus.innerHTML='<span class="hot">DEPTH 01 OPEN</span>';
+  breach.classList.add('open');
+
+  noiseBurst(true);
+  doGlitch();
+  setTimeout(angelFlash,420);
+
+  showMessage(
+    '2 SILENT SEALS',
+    'THEY DO NOT OPEN THE RLM. THEY OPEN A WAY THROUGH IT.',
+    4200
+  );
+
+  setTimeout(()=>whisper('the storm is inside the map'),1500);
+  setTimeout(()=>whisper('something is using the empty seals'),5200);
+
+  setTimeout(()=>{
+    showMessage(
+      'ACCESS DEPTH 01',
+      'UNSEALED REGION DETECTED // OBSERVER MAY PROCEED',
+      3800
+    );
+  },5600);
+
+  // This is the hand-off point for the next phase of the final.
+  // We deliberately do NOT reveal the entire final yet.
+  setTimeout(()=>{
+    document.getElementById('bottom').textContent='DEPTH 01 // OPEN // FURTHER LAYERS UNRESOLVED';
+  },8200);
+}
+
+function drawStorm(){
+  storm.clearRect(0,0,W,H);
+
+  // No safe/calm centre: the entire field is under storm.
+  const bg=storm.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#050708');
+  bg.addColorStop(.35,'#0a0d0f');
+  bg.addColorStop(.65,'#050708');
+  bg.addColorStop(1,'#010203');
+  storm.fillStyle=bg;
+  storm.fillRect(0,0,W,H);
+
+  // Cloud bands across entire canvas
+  for(let i=0;i<13;i++){
+    const y=(i/12)*H + Math.sin(time*.00011+i*1.7)*35;
+    const xoff=Math.sin(time*.00007+i)*90;
+    storm.strokeStyle=`rgba(128,143,146,${.018+(i%4)*.008})`;
+    storm.lineWidth=18+(i%3)*14;
+    storm.beginPath();
+    storm.moveTo(-120+xoff,y);
+    storm.bezierCurveTo(W*.28,y-70,W*.62,y+85,W+140+xoff,y-10);
+    storm.stroke();
+  }
+
+  // Wind/rain particles everywhere
+  motes.forEach(p=>{
+    p.x+=p.vx*p.s*stormAmp;
+    p.y+=p.vy*p.s*stormAmp;
+    if(p.y>H+70){p.y=-70;p.x=Math.random()*W}
+    if(p.x<-80)p.x=W+80;
+    if(p.x>W+80)p.x=-80;
+
+    storm.strokeStyle=`rgba(181,194,196,${Math.min(.3,p.a*stormAmp)})`;
+    storm.lineWidth=.45+p.s*.35;
+    storm.beginPath();
+    storm.moveTo(p.x,p.y);
+    storm.lineTo(p.x-p.vx*p.len*.18,p.y-p.vy*p.len*.18);
+    storm.stroke();
+  });
+}
+
+function drawNetwork(){
+  net.clearRect(0,0,W,H);
+
+  edges.forEach(([a,b],idx)=>{
+    const A=byId(a),B=byId(b);
+    const ax=A.x*W,ay=A.y*H,bx=B.x*W,by=B.y*H;
+    const alpha=.06+.025*Math.sin(time*.0018+idx);
+
+    net.strokeStyle=`rgba(175,190,186,${alpha})`;
+    net.lineWidth=.8;
+    net.beginPath();
+    net.moveTo(ax,ay);
+
+    const mx=(ax+bx)/2+Math.sin(idx*4.17)*19;
+    const my=(ay+by)/2+Math.cos(idx*3.31)*17;
+    net.quadraticCurveTo(mx,my,bx,by);
+    net.stroke();
+
+    const p=(time*.00005+idx*.073)%1;
+    const qx=(1-p)*(1-p)*ax+2*(1-p)*p*mx+p*p*bx;
+    const qy=(1-p)*(1-p)*ay+2*(1-p)*p*my+p*p*by;
+
+    net.fillStyle=`rgba(210,220,216,${A.silent||B.silent?.23:.12})`;
+    net.beginPath();net.arc(qx,qy,1.15,0,Math.PI*2);net.fill();
+  });
+
+  // Interference geometry, subtly forming wrong circles.
+  for(let i=0;i<5;i++){
+    const rr=Math.min(W,H)*(.14+i*.075);
+    net.strokeStyle=`rgba(170,185,181,${.012+i*.003})`;
+    net.beginPath();
+    net.ellipse(W*.5,H*.5,rr*1.7,rr,.12*Math.sin(time*.0001+i),0,Math.PI*2);
+    net.stroke();
+  }
+}
+
+function maybeLightning(now){
+  if(now<lastLightning)return;
+
+  if(Math.random()<(ragnarokStarted?.19:.018)){
+    lastLightning=now+500+Math.random()*1800;
+
+    storm.save();
+    storm.globalCompositeOperation='screen';
+
+    for(let bolt=0;bolt<1+(Math.random()<.25?1:0);bolt++){
+      let x=Math.random()*W,y=-10;
+      storm.strokeStyle=`rgba(225,235,237,${.16+Math.random()*.32})`;
+      storm.lineWidth=.7+Math.random()*1.3;
+      storm.beginPath();
+      storm.moveTo(x,y);
+      const steps=7;
+      for(let i=0;i<steps;i++){
+        x+=(-45+Math.random()*90);
+        y+=H/steps;
+        storm.lineTo(x,y);
+      }
+      storm.stroke();
+    }
+
+    storm.restore();
+
+    if(audioCtx)thunder();
+    if(Math.random()<.30)angelFlash();
+    if(Math.random()<.18)doGlitch();
+  }
+}
+
+const whispers=[
+  'do not count the voices',
+  'the seals are not doors',
+  'there is no outside here',
+  'someone else is connected',
+  'do not follow the lightning',
+  'the storm remembers',
+  'you are not looking at weather'
+];
+
+function maybeWhisper(now){
+  if(now<nextWhisper)return;
+  nextWhisper=now+9000+Math.random()*14000;
+
+  if(entered){
+    whisper(whispers[Math.floor(Math.random()*whispers.length)]);
+    if(Math.random()<.15)angelFlash();
+  }
+}
+
+function intro(){
+  setTimeout(()=>showMessage('RLM','THIS IS HOW I SEE IT.',2600),550);
+
+  setTimeout(()=>showMessage(
+    '8 CITIES',
+    'THE CITIES WERE NEVER NODES.',
+    2700
+  ),3600);
+
+  setTimeout(()=>showMessage(
+    '8 SEALS',
+    'THE NETWORK EXISTS BECAUSE THEY HOLD.',
+    3300
+  ),6900);
+
+  setTimeout(()=>showMessage(
+    '2 SILENT',
+    'SILENCE IS NOT ABSENCE.',
+    3000
+  ),10600);
+
+  setTimeout(()=>{
+    showMessage(
+      'FIND THE FAILED SEALS',
+      'THEY EXPOSE ONLY PART OF WHAT IS BELOW.',
+      3600
+    );
+  },14200);
+
+  setTimeout(()=>{
+    showMessage('PERCEPTION MODEL','INTERACTION CHANGES THE OBSERVATION.',2600);
+  },18100);
+}
+
+
+function frame(t){
+  time=t;
+  drawStorm();
+  drawNetwork();
+  maybeLightning(t);
+  maybeWhisper(t);
+  requestAnimationFrame(frame);
+}
+
+
+warningContinue.addEventListener('click',()=>{
+  pendingWarning=false;
+  warningOverlay.classList.remove('show');
+  ensureAudio();
+  noiseBurst(warningLevel>=2);
+  if(warningLevel===3){
+    showMessage('PERCEPTION MODEL','IRREVERSIBLE DRIFT ACCEPTED',1900);
+    whisper('one more layer and it stops being his');
+  }
+});
+
+warningAbort.addEventListener('click',()=>{
+  pendingWarning=false;
+  warningOverlay.classList.remove('show');
+  showMessage('OBSERVATION PAUSED','THE CONNECTION REMAINS OPEN.',1800);
+});
+
+
+document.getElementById('enterBtn').addEventListener('click',()=>{
+  ensureAudio();
+  entered=true;
+  document.getElementById('enter').style.display='none';
+  doGlitch();
+  setTimeout(angelFlash,850);
+  intro();
+});
+
+soloSeal.addEventListener('click',soloSealClick);
+makeSeals();
+resize();
+updateStrain();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

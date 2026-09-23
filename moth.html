@@ -48,7 +48,7 @@ legacy handle .............</span> <span class="red">MOTH</span>
 <script>
 const FILES={"a7c.log": {"sec": 23, "content": "9wwnzfs88v0qpv9p1fvdqyM-q3o48rcslzegibdri1jvagpyx4x2eyx_8-tekcaj", "mtime": "2026-03-03 03:33:23"}, "k19.bin": {"sec": 3, "content": "xuO9fkb_q7dyfztyrpknm94ts2timufa3l799tcjsx4633ikmxx991uepcumy--m", "mtime": "2026-03-03 03:33:03"}, "r4.tmp": {"sec": 41, "content": "1jlxvi612_5x3ii-htzlj84pur_ufp2oi-y-jo_3T.21_o09oecw-adtiyvs0g8i", "mtime": "2026-03-03 03:33:41"}, "n0de.dat": {"sec": 11, "content": "14cn55a085H4pg4dp63.qg8t63ymk4epf5vae7o_1vjyf_x9ez5-sfbb6mev.8wh", "mtime": "2026-03-03 03:33:11"}, "cache.11": {"sec": 31, "content": "cy_5ixl.5457_5ab0-qlxfs9oxgxky=5gd6r4q9lxj93cgp76mkrnfyf71lafes2", "mtime": "2026-03-03 03:33:31"}, "sig_4f": {"sec": 7, "content": "1ker9zF17m0wbw.c1s6ipq4p_1frkfyehsn7--z4itfx-efjy83am.y64jae3rfz", "mtime": "2026-03-03 03:33:07"}, "trace17": {"sec": 47, "content": "5ratp7rivcrh7uut0h02oxrb0-.5447yuefl-.tag91qynI94j15hwsuos38fzjp", "mtime": "2026-03-03 03:33:47"}, "q31.log": {"sec": 17, "content": "dt1y6yd9.-qjf5mmR8ebgrfn0bvk6nmfaqmdb5yu7qkpd4fplqjekn2c5g-2jrwu", "mtime": "2026-03-03 03:33:17"}, "void.bin": {"sec": 37, "content": "s-tibmibwzol4d18irewk6jtxjlvbfy3690qEwxtfxxjjlywqhc4srr.6zhkr8bm", "mtime": "2026-03-03 03:33:37"}, "e3.tmp": {"sec": 13, "content": "ygp1i86f9f2-Fyzl-vsab-jdvvdgx7cn4v0cf46cfkc8hhrtgwizllc50770f4is", "mtime": "2026-03-03 03:33:13"}, "mem29": {"sec": 29, "content": "2jabqkayy0fybdrj8ok_bt8ib5-1L-w-j46.7fjg1bi4_79s3c1f5kcuirn7vkvc", "mtime": "2026-03-03 03:33:29"}, "f19.dat": {"sec": 19, "content": "3x7v9u6xwdugdhgsi2Ygdax2o27bcvvnlt.7651jzotzdftercspykyn-cfhxcyn", "mtime": "2026-03-03 03:33:19"}};const NAMES=["a7c.log", "k19.bin", "r4.tmp", "n0de.dat", "cache.11", "sig_4f", "trace17", "q31.log", "void.bin", "e3.tmp", "mem29", "f19.dat"];
 const out=document.getElementById('output'),cmd=document.getElementById('cmd'),term=document.getElementById('term'),shock=document.getElementById('angelShock'),nextDoor=document.getElementById('nextDoor');
-let commands=0,decay=0,audio=null,solved=false;
+let commands=0,decay=0,audio=null,solved=false,rlmArmed=false;
 function ensureAudio(){if(audio)return audio;try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}return audio}
 function noiseHit(strong=false){const a=ensureAudio();if(!a)return;const dur=strong?.30:.13,n=Math.floor(a.sampleRate*dur),buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const src=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();src.buffer=buf;f.type='bandpass';f.frequency.value=strong?1700:720;f.Q.value=.7;g.gain.value=strong?.11:.035;src.connect(f).connect(g).connect(a.destination);src.start();const o=a.createOscillator(),og=a.createGain();o.type='sawtooth';o.frequency.setValueAtTime(strong?380:91,a.currentTime);o.frequency.exponentialRampToValueAtTime(39,a.currentTime+dur);og.gain.setValueAtTime(strong?.035:.012,a.currentTime);og.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur);o.connect(og).connect(a.destination);o.start();o.stop(a.currentTime+dur)}
 function screamer(mode=''){shock.className='';if(mode)shock.classList.add(mode);void shock.offsetWidth;shock.classList.add('show');noiseHit(true);setTimeout(()=>shock.className='',360)}
@@ -127,7 +127,94 @@ archive branch: FOURTH`,'dim');
     if(Math.random()<.5)screamer('');
   }
 }
-function run(raw){worsen();let t=raw.trim(),parts=t.split(/\s+/),c=parts[0]?.toLowerCase();print('<span class="red">moth@dead:~$</span> '+t);if(!t)return;if(c==='help')help();else if(c==='ls')ls(parts.includes('-la')||parts.includes('-a'));else if(c==='cat')catFile(parts[1]);else if(c==='stat')statFile(parts[1]);else if(c==='strings')stringsFile(parts[1]);else if(c==='history')history();else if(c==='pwd')print('/home/moth/archive_333');else if(c==='whoami')print('moth');else if(c==='clear')out.innerHTML='';else if(c==='solve')solveAnswer(parts.slice(1).join(' '));else print(c+': command not found','dim')}
+
+const RLM_SIG='8a3b27041ed813a2';
+
+function beginRLM(sig){
+  const clean=(sig||'').trim().toLowerCase();
+
+  if(clean!==RLM_SIG){
+    print('MAP SIGNATURE ............. INVALID','bad');
+    print('8 records required. canonical order.','dim');
+    noiseHit(false);
+    return;
+  }
+
+  rlmArmed=true;
+
+  print('MAP SIGNATURE ............. VALID','red');
+  print(`CITY TABLE ................ 8/8
+BLACK INDEX ............... VALID
+CONTINUITY ................ VALID
+
+mounting observer layer...
+restoring topology...
+opening ff-network...`,'dim');
+
+  setTimeout(()=>print('WARNING','bad'),650);
+
+  setTimeout(()=>print(`FIREFLY'S RLM MODEL
+IS NOT A SIMULATION.`,'red'),1100);
+
+  setTimeout(()=>print('LOCAL OBSERVER DETECTED','bad'),1850);
+  setTimeout(()=>print('ENTER? [Y/N]','red'),2450);
+}
+
+function answerRLM(v){
+  if(!rlmArmed)return false;
+
+  const a=(v||'').trim().toLowerCase();
+
+  if(a==='y'||a==='yes'){
+    rlmArmed=false;
+    print('DO NOT CLOSE THE CONNECTION.','bad');
+    screamer('face');
+
+    setTimeout(()=>print('routing...','dim'),650);
+    setTimeout(()=>print('storm layer ............... PRESENT','red'),1050);
+    setTimeout(()=>{ window.location.href='rlm.html'; },1750);
+    return true;
+  }
+
+  if(a==='n'||a==='no'){
+    rlmArmed=false;
+    print('connection left open.','dim');
+    return true;
+  }
+
+  print('ENTER? [Y/N]','red');
+  return true;
+}
+
+function run(raw){
+  worsen();
+
+  let t=raw.trim(),
+      parts=t.split(/\s+/),
+      c=parts[0]?.toLowerCase();
+
+  print('<span class="red">moth@dead:~$</span> '+t);
+
+  if(rlmArmed){
+    answerRLM(t);
+    return;
+  }
+
+  if(!t)return;
+
+  if(c==='help')help();
+  else if(c==='ls')ls(parts.includes('-la')||parts.includes('-a'));
+  else if(c==='cat')catFile(parts[1]);
+  else if(c==='stat')statFile(parts[1]);
+  else if(c==='strings')stringsFile(parts[1]);
+  else if(c==='history')history();
+  else if(c==='pwd')print('/home/moth/archive_333');
+  else if(c==='whoami')print('moth');
+  else if(c==='clear')out.innerHTML='';
+  else if(c==='solve')solveAnswer(parts.slice(1).join(' '));
+  else if(c==='rlm')beginRLM(parts[1]);
+  else print(c+': command not found','dim');
+}
 cmd.addEventListener('keydown',e=>{
   ensureAudio();
   if(e.key==='Enter'){
