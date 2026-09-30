@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RLM // FIREFLY</title>
+<title>RLM // FIREFLY // POSTMORTEM</title>
 <style>
 :root{
   --bg:#010203;
@@ -441,9 +441,69 @@ body.ragnarok #soloSeal{
   .sealLabel{top:84px;width:140px;font-size:8px}
   .ring{inset:10px}.ring2{inset:20px}.ring3{inset:29px}
 }
+
+#deathRecordLink{
+  position:fixed;
+  right:24px;
+  bottom:52px;
+  z-index:45;
+  pointer-events:auto;
+  text-decoration:none;
+  color:#d3484e;
+  border:1px solid rgba(150,34,40,.58);
+  background:rgba(8,3,4,.88);
+  padding:10px 13px;
+  font-size:9px;
+  letter-spacing:.13em;
+  box-shadow:0 0 24px rgba(120,0,10,.12);
+}
+#deathRecordLink:hover{
+  color:#ff6b71;
+  border-color:#b42c33;
+  box-shadow:0 0 34px rgba(150,0,14,.22);
+}
+#postmortemFlag{
+  position:fixed;
+  top:22px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:44;
+  pointer-events:none;
+  color:#a92c32;
+  font-size:9px;
+  letter-spacing:.15em;
+  text-align:center;
+  text-shadow:0 0 12px #000;
+}
+#postmortemFlag strong{
+  display:block;
+  color:#d9deda;
+  font-size:10px;
+  font-weight:400;
+  margin-top:4px;
+}
+#incidentEcho{
+  position:fixed;
+  right:24px;
+  bottom:88px;
+  z-index:43;
+  pointer-events:none;
+  color:#5f6763;
+  text-align:right;
+  font-size:8px;
+  line-height:1.55;
+  letter-spacing:.08em;
+}
+body.postmortem #strainStatus{
+  color:#774146;
+}
+body.postmortem #strainStatus .danger{
+  color:#a9282d;
+}
+
 </style>
 </head>
-<body>
+<body class="postmortem">
 <canvas id="storm"></canvas>
 <div id="clouds"></div>
 <canvas id="net"></canvas>
@@ -464,14 +524,27 @@ body.ragnarok #soloSeal{
 <div id="scan"></div>
 <div id="vignette"></div>
 
+<div id="postmortemFlag">
+  POST-INCIDENT COPY
+  <strong>FIREFLY // DEAD</strong>
+</div>
+
+<div id="incidentEcho">
+  RAGNAROK TRANSMISSIONS RECOVERED<br>
+  00:48:04 // 01:04:28 // 03:30:46
+</div>
+
+<a id="deathRecordLink" href="death.html">OPEN FIREFLY DEATH RECORD</a>
+
 <div id="hud">
   <div id="topLeft">
-    <div id="title">RLM // FIREFLY</div>
+    <div id="title">RLM // FIREFLY // POSTMORTEM</div>
     <div id="sub"><span class="strike">NETWORK MODEL</span> → PERCEPTION MODEL</div>
   </div>
 
   <div id="status">
     LOCAL OBSERVER ........ <span class="hot">CONNECTED</span><br>
+    FIREFLY ............... <span class="hot">DEAD</span><br>
     CITY TABLE ............ 8/8<br>
     SEALS .................. 8 + 1 AUX<br>
     SILENT ................. <span class="hot" id="silentCount">2</span><br>
@@ -485,7 +558,7 @@ body.ragnarok #soloSeal{
   </div>
 
   <div id="stormStatus">NO CLEAR SKY DETECTED</div>
-  <div id="strainStatus">PERCEPTION INTEGRITY // <span id="strainValue">STABLE</span></div><div id="bottom">FIREFLY LOCAL VISUALIZER // BUILD 0.9.17</div>
+  <div id="strainStatus">POSTMORTEM SIGNAL // <span id="strainValue">REMAINS</span></div><div id="bottom">RLM REMNANT // FIREFLY NO LONGER OBSERVING</div>
 </div>
 
 
@@ -507,20 +580,16 @@ body.ragnarok #soloSeal{
 <div id="enter">
   <div id="enterBox">
     <h1>RLM</h1>
-    <p>FIREFLY NETWORK MODEL</p>
-    <p>LOCAL OBSERVER DETECTED.</p>
+    <p>FIREFLY PERCEPTION MODEL // POST-INCIDENT COPY</p>
+    <p>LOCAL OBSERVER DETECTED.</p><p style="color:#a9282d">FIREFLY: DEAD.</p>
     <p>STORM FIELD: PRESENT AT ALL COORDINATES.</p>
-    <p>THE CONNECTION IS ALREADY OPEN.</p>
-    <button id="enterBtn">ENTER</button>
+    <p>THE CONNECTION REMAINED OPEN AFTER TERMINATION.</p>
+    <button id="enterBtn">ENTER REMNANT</button>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
-const EMAILJS_SERVICE_ID='service_3zdgrrm';
-const EMAILJS_TEMPLATE_ID='template_4goh9jc';
-const EMAILJS_PUBLIC_KEY='nb-zeEPXeqDiRr1IC';
-const INCIDENT_TO='333.lockelle@gmail.com';
+const POSTMORTEM_MODE=true;
 
 const stormCanvas=document.getElementById('storm');
 const storm=stormCanvas.getContext('2d');
@@ -780,11 +849,10 @@ function sealClick(n){
 
 function updateStrain(){
   if(!strainValue)return;
-  let label='STABLE';
-  if(interactionCount>=3) label='DRIFT';
-  if(interactionCount>=6) label='UNRELIABLE';
-  if(interactionCount>=8) label='CRITICAL';
-  if(interactionCount>=RAGNAROK_CLICK) label='FAILED';
+  let label='REMAINS';
+  if(interactionCount>=3) label='RESPONDING';
+  if(interactionCount>=6) label='ECHOING';
+  if(interactionCount>=10) label='POST-RAGNAROK';
   strainValue.textContent=label;
   strainValue.className=interactionCount>=6?'danger':'';
 }
@@ -833,22 +901,22 @@ function showPerceptionWarning(level){
 }
 
 function registerInteraction(){
-  if(ended||ragnarokStarted)return false;
+  if(!entered||ended)return false;
 
   interactionCount++;
   updateStrain();
 
-  if(interactionCount===WARNING_STEPS[0]){
-    showPerceptionWarning(1);
-  }else if(interactionCount===WARNING_STEPS[1]){
-    showPerceptionWarning(2);
-  }else if(interactionCount===WARNING_STEPS[2]){
-    showPerceptionWarning(3);
-  }
-
-  if(interactionCount>=RAGNAROK_CLICK){
-    startRagnarok();
-    return true;
+  if(interactionCount===3){
+    whisper('firefly is no longer here to receive the feedback');
+  }else if(interactionCount===6){
+    showMessage('POSTMORTEM REMNANT','THE MODEL STILL REACTS // THE OBSERVER DOES NOT',2300);
+    doGlitch();
+  }else if(interactionCount===10){
+    showMessage('RAGNAROK','ALREADY RECORDED // FATAL EVENT CANNOT REPEAT',2600);
+    whisper('you are walking through what remained');
+    angelFlash();
+  }else if(interactionCount>10 && interactionCount%5===0){
+    whisper('the connection is older than the person who opened it');
   }
 
   return false;
@@ -1237,7 +1305,7 @@ function maybeWhisper(now){
 }
 
 function intro(){
-  setTimeout(()=>showMessage('RLM','THIS IS HOW I SEE IT.',2600),550);
+  setTimeout(()=>showMessage('RLM','THIS IS HOW HE SAW IT.',2600),550);
 
   setTimeout(()=>showMessage(
     '8 CITIES',
@@ -1280,6 +1348,15 @@ function frame(t){
   requestAnimationFrame(frame);
 }
 
+
+// POSTMORTEM MODE:
+ // Exploration remains interactive, but the fatal Ragnarök cannot be triggered again.
+startRagnarok = function(){
+  showMessage('RAGNAROK','ALREADY OCCURRED // FIREFLY TERMINATED',2600);
+  whisper('there is nobody left on the other side');
+  doGlitch();
+  angelFlash();
+};
 
 warningContinue.addEventListener('click',()=>{
   pendingWarning=false;
